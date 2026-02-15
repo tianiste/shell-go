@@ -4,27 +4,39 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
-	commands := map[string]interface{}{
+	commands := map[string]func(string){
 		"exit": exit,
+		"echo": echo,
 	}
 	reader := bufio.NewScanner(os.Stdin)
-	fmt.Print("$ ")
+	firstPrint()
 
 	for reader.Scan() {
 		text := reader.Text()
-		if command, exists := commands[text]; !exists {
+		parts := strings.Fields(text)
+		cmd := parts[0]
+		if command, exists := commands[cmd]; !exists {
 			fmt.Println(text + ": command not found")
 		} else if exists {
-			command.(func())()
+			command(text[len(cmd):])
 		}
-		fmt.Print("$ ")
-
+		firstPrint()
 	}
 }
 
-func exit() {
+func firstPrint() {
+	fmt.Print("$ ")
+
+}
+
+func exit(args string) {
 	os.Exit(0)
+}
+
+func echo(args string) {
+	fmt.Println(args)
 }
