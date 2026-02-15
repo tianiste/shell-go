@@ -7,10 +7,13 @@ import (
 	"strings"
 )
 
+var commands map[string]func(string)
+
 func main() {
-	commands := map[string]func(string){
+	commands = map[string]func(string){
 		"exit": exit,
 		"echo": echo,
+		"type": typeFunc,
 	}
 	reader := bufio.NewScanner(os.Stdin)
 	firstPrint()
@@ -20,9 +23,11 @@ func main() {
 		parts := strings.Fields(text)
 		cmd := parts[0]
 		if command, exists := commands[cmd]; !exists {
-			fmt.Println(text + ": command not found")
+			fmt.Println(cmd + ": command not found")
 		} else if exists {
-			command(text[len(cmd):])
+			args := text[len(cmd):]
+			args = strings.TrimPrefix(args, " ")
+			command(args)
 		}
 		firstPrint()
 	}
@@ -42,4 +47,12 @@ func echo(args string) {
 		args = args[1:]
 	}
 	fmt.Println(args)
+}
+
+func typeFunc(args string) {
+	if _, exists := commands[args]; exists {
+		fmt.Println(args, "is a shell builtin")
+		return
+	}
+	fmt.Println(args + ": command not found")
 }
