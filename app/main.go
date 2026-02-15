@@ -22,7 +22,7 @@ func main() {
 		if command, exists := commands[cmd]; !exists {
 			fmt.Println(text + ": command not found")
 		} else if exists {
-			command(text[len(cmd):])
+			command(text[len(cmd)+1:])
 		}
 		firstPrint()
 	}
