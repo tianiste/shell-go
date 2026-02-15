@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -21,14 +22,19 @@ func main() {
 	for reader.Scan() {
 		text := reader.Text()
 		parts := strings.Fields(text)
-		cmd := parts[0]
-		if command, exists := commands[cmd]; !exists {
-			fmt.Println(cmd + ": command not found")
-		} else if exists {
-			args := text[len(cmd):]
-			args = strings.TrimPrefix(args, " ")
-			command(args)
+		if strings.Trim(text, " ") == "" {
+			firstPrint()
+			continue
 		}
+		cmd := parts[0]
+		args := text[len(cmd):]
+		args = strings.TrimPrefix(args, " ")
+		if builtin, exists := commands[cmd]; exists {
+			builtin(args)
+		} else {
+			runExternal(cmd, parts[1:])
+		}
+
 		firstPrint()
 	}
 }
@@ -54,5 +60,27 @@ func typeFunc(args string) {
 		fmt.Println(args, "is a shell builtin")
 		return
 	}
+	if path, err := exec.LookPath(args); err == nil {
+		fmt.Println(args, "is", path)
+		return
+	}
 	fmt.Println(args + ": not found")
+}
+
+func runExternal(name string, args []string) {
+	path, err := exec.LookPath(name)
+	if err != nil {
+		fmt.Println(name + ": command not found")
+		return
+	}
+
+	cmd := exec.Command(path, args...)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	if err := cmd.Run(); err != nil {
+		fmt.Println("error:", err)
+	}
 }
