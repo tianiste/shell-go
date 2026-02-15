@@ -74,6 +74,7 @@ func runExternal(name string, args []string) {
 
 	cmd := exec.Command(path)
 	cmd.Args = append(cmd.Args, args...)
+	cmd.Path = path
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
