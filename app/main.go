@@ -49,9 +49,7 @@ func exit(args string) {
 }
 
 func echo(args string) {
-	if strings.HasPrefix(args, " ") {
-		args = args[1:]
-	}
+	strings.TrimPrefix(args, " ")
 	fmt.Println(args)
 }
 
