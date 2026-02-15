@@ -22,7 +22,7 @@ func main() {
 		if command, exists := commands[cmd]; !exists {
 			fmt.Println(text + ": command not found")
 		} else if exists {
-			command(text[len(cmd)+1:])
+			command(text[len(cmd):])
 		}
 		firstPrint()
 	}
@@ -38,5 +38,8 @@ func exit(args string) {
 }
 
 func echo(args string) {
+	if strings.HasPrefix(args, " ") {
+		args = args[1:]
+	}
 	fmt.Println(args)
 }
