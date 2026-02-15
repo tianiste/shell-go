@@ -67,7 +67,12 @@ func handleType(args string) {
 }
 
 func handlePwd(args string) {
-	fmt.Println(os.Getwd())
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(dir)
 }
 
 func runExternal(name string, args []string) {
