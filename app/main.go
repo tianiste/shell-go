@@ -12,9 +12,10 @@ var commands map[string]func(string)
 
 func main() {
 	commands = map[string]func(string){
-		"exit": exit,
-		"echo": echo,
-		"type": typeFunc,
+		"exit": handleExit,
+		"echo": handleEcho,
+		"type": handleType,
+		"pwd":  handlePwd,
 	}
 	reader := bufio.NewScanner(os.Stdin)
 	firstPrint()
@@ -44,16 +45,16 @@ func firstPrint() {
 
 }
 
-func exit(args string) {
+func handleExit(args string) {
 	os.Exit(0)
 }
 
-func echo(args string) {
+func handleEcho(args string) {
 	strings.TrimPrefix(args, " ")
 	fmt.Println(args)
 }
 
-func typeFunc(args string) {
+func handleType(args string) {
 	if _, exists := commands[args]; exists {
 		fmt.Println(args, "is a shell builtin")
 		return
@@ -63,6 +64,10 @@ func typeFunc(args string) {
 		return
 	}
 	fmt.Println(args + ": not found")
+}
+
+func handlePwd(args string) {
+	fmt.Println(os.Getwd())
 }
 
 func runExternal(name string, args []string) {
