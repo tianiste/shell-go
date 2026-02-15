@@ -54,5 +54,5 @@ func typeFunc(args string) {
 		fmt.Println(args, "is a shell builtin")
 		return
 	}
-	fmt.Println(args + ": command not found")
+	fmt.Println(args + ": not found")
 }
