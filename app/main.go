@@ -46,6 +46,10 @@ func firstPrint() {
 
 }
 
+func normaliseString(input string) (output string) {
+	return strings.Trim(input, " ")
+}
+
 func handleExit(args string) {
 	os.Exit(0)
 }
@@ -97,6 +101,15 @@ func runExternal(name string, args []string) {
 }
 
 func handleCd(path string) {
+	if normaliseString(path) == "~" {
+		homeDir, err := os.UserHomeDir() // could be made a global variable so its not re initialised every time a user tries to do cd ~
+		if err != nil {
+			fmt.Printf("cd: %s: No such file or directory \n", path)
+			return
+		}
+		os.Chdir(homeDir)
+		return
+	}
 	if err := os.Chdir(path); err != nil {
 		fmt.Printf("cd: %s: No such file or directory \n", path)
 		return
