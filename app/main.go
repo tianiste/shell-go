@@ -39,7 +39,7 @@ func main() {
 			continue
 		}
 		cmd := parts[0]
-		args := strings.Join(parts[1:], " ")
+		args := text[len(cmd):]
 		args = normaliseString(args)
 		if builtin, exists := commands[cmd]; exists {
 			builtin(args)
