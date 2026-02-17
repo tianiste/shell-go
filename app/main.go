@@ -30,7 +30,7 @@ func main() {
 		}
 		cmd := parts[0]
 		args := text[len(cmd):]
-		args = strings.TrimPrefix(args, " ")
+		args = normaliseString(args)
 		if builtin, exists := commands[cmd]; exists {
 			builtin(args)
 		} else {
@@ -54,11 +54,52 @@ func handleExit(args string) {
 	os.Exit(0)
 }
 
-func handleEcho(args string) {
-	strings.TrimPrefix(args, " ")
-	fmt.Println(args)
+func parseCommandLine(line string) ([]string, error) {
+	var args []string
+	var current strings.Builder
+	inSingleQuotes := false
+	hasData := false
+
+	flush := func() {
+		if hasData {
+			args = append(args, current.String())
+			current.Reset()
+			hasData = false
+		}
+	}
+
+	for _, r := range line {
+		if r == '\'' {
+			inSingleQuotes = !inSingleQuotes
+			continue
+		}
+
+		if !inSingleQuotes && (r == ' ' || r == '\t') {
+			flush()
+			continue
+		}
+
+		current.WriteRune(r)
+		hasData = true
+	}
+
+	if inSingleQuotes {
+		return nil, fmt.Errorf("unclosed single quote")
+	}
+
+	flush()
+	return args, nil
 }
 
+func handleEcho(input string) {
+	args, err := parseCommandLine(input)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		return
+	}
+
+	fmt.Println(strings.Join(args, " "))
+}
 func handleType(args string) {
 	if _, exists := commands[args]; exists {
 		fmt.Println(args, "is a shell builtin")
