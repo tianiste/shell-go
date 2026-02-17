@@ -16,6 +16,7 @@ func main() {
 		"echo": handleEcho,
 		"type": handleType,
 		"pwd":  handlePwd,
+		"cd":   handleCd,
 	}
 	reader := bufio.NewScanner(os.Stdin)
 	firstPrint()
@@ -92,5 +93,12 @@ func runExternal(name string, args []string) {
 
 	if err := cmd.Run(); err != nil {
 		fmt.Println("error:", err)
+	}
+}
+
+func handleCd(path string) {
+	if err := os.Chdir(path); err != nil {
+		fmt.Printf("cd: %s: No such file or directory \n", path)
+		return
 	}
 }
