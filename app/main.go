@@ -23,13 +23,23 @@ func main() {
 
 	for reader.Scan() {
 		text := reader.Text()
-		parts := strings.Fields(text)
+		// parts := strings.Fields(text)
+		parts, err := parseCommandLine(text)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			firstPrint()
+			continue
+		}
 		if strings.Trim(text, " ") == "" {
 			firstPrint()
 			continue
 		}
+		if len(parts) == 0 {
+			firstPrint()
+			continue
+		}
 		cmd := parts[0]
-		args := text[len(cmd):]
+		args := strings.Join(parts[1:], " ")
 		args = normaliseString(args)
 		if builtin, exists := commands[cmd]; exists {
 			builtin(args)
