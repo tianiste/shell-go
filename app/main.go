@@ -153,7 +153,7 @@ func runExternal(name string, args []string) {
 
 func handleCd(path string) {
 	if normaliseString(path) == "~" {
-		homeDir, err := os.UserHomeDir() // could be made a global variable so its not re initialised every time a user tries to do cd ~
+		homeDir, err := os.UserHomeDir() // could have been made a global variable so its not re initialised every time a user tries to do cd ~
 		if err != nil {
 			fmt.Printf("cd: %s: No such file or directory \n", path)
 			return
