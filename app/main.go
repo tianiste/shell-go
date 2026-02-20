@@ -68,6 +68,7 @@ func parseCommandLine(line string) ([]string, error) {
 	var args []string
 	var current strings.Builder
 	inSingleQuotes := false
+	inDoubleQuotes := false
 	hasData := false
 
 	flush := func() {
@@ -79,12 +80,16 @@ func parseCommandLine(line string) ([]string, error) {
 	}
 
 	for _, r := range line {
-		if r == '\'' || r == '"' {
+		if r == '\'' && !inDoubleQuotes {
 			inSingleQuotes = !inSingleQuotes
 			continue
 		}
+		if r == '"' && !inSingleQuotes {
+			inDoubleQuotes = !inDoubleQuotes
+			continue
+		}
 
-		if !inSingleQuotes && (r == ' ' || r == '\t') {
+		if !inSingleQuotes && !inDoubleQuotes && (r == ' ' || r == '\t') {
 			flush()
 			continue
 		}
@@ -95,6 +100,9 @@ func parseCommandLine(line string) ([]string, error) {
 
 	if inSingleQuotes {
 		return nil, fmt.Errorf("unclosed single quote")
+	}
+	if inDoubleQuotes {
+		return nil, fmt.Errorf("unclosed double quote")
 	}
 
 	flush()
