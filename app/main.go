@@ -79,7 +79,7 @@ func parseCommandLine(line string) ([]string, error) {
 	}
 
 	for _, r := range line {
-		if r == '\'' {
+		if r == '\'' || r == '"' {
 			inSingleQuotes = !inSingleQuotes
 			continue
 		}
