@@ -70,6 +70,7 @@ func parseCommandLine(line string) ([]string, error) {
 	inSingleQuotes := false
 	inDoubleQuotes := false
 	hasData := false
+	escapeNext := false
 
 	flush := func() {
 		if hasData {
@@ -91,6 +92,31 @@ func parseCommandLine(line string) ([]string, error) {
 
 		if !inSingleQuotes && !inDoubleQuotes && (r == ' ' || r == '\t') {
 			flush()
+			continue
+		}
+		if r == '\\' && !inSingleQuotes {
+			escapeNext = true
+			continue
+		}
+		if escapeNext {
+			switch r {
+			case 'n':
+				current.WriteRune('\n')
+			case 't':
+				current.WriteRune('\t')
+			case '\\':
+				current.WriteRune('\\')
+			case '"':
+				current.WriteRune('"')
+			case '\'':
+				current.WriteRune('\'')
+			case ' ':
+				current.WriteRune(' ')
+			default:
+				current.WriteRune(r)
+			}
+			escapeNext = false
+			hasData = true
 			continue
 		}
 
