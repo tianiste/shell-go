@@ -81,23 +81,6 @@ func parseCommandLine(line string) ([]string, error) {
 	}
 
 	for _, r := range line {
-		if r == '\'' && !inDoubleQuotes {
-			inSingleQuotes = !inSingleQuotes
-			continue
-		}
-		if r == '"' && !inSingleQuotes {
-			inDoubleQuotes = !inDoubleQuotes
-			continue
-		}
-
-		if !inSingleQuotes && !inDoubleQuotes && (r == ' ' || r == '\t') {
-			flush()
-			continue
-		}
-		if r == '\\' && !inSingleQuotes {
-			escapeNext = true
-			continue
-		}
 		if escapeNext {
 			switch r {
 			case 'n':
@@ -117,6 +100,25 @@ func parseCommandLine(line string) ([]string, error) {
 			}
 			escapeNext = false
 			hasData = true
+			continue
+		}
+
+		if r == '\\' && !inSingleQuotes {
+			escapeNext = true
+			continue
+		}
+
+		if r == '\'' && !inDoubleQuotes {
+			inSingleQuotes = !inSingleQuotes
+			continue
+		}
+		if r == '"' && !inSingleQuotes {
+			inDoubleQuotes = !inDoubleQuotes
+			continue
+		}
+
+		if !inSingleQuotes && !inDoubleQuotes && (r == ' ' || r == '\t') {
+			flush()
 			continue
 		}
 
