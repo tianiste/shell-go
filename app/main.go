@@ -82,22 +82,7 @@ func parseCommandLine(line string) ([]string, error) {
 
 	for _, r := range line {
 		if escapeNext {
-			switch r {
-			case 'n':
-				current.WriteRune('\n')
-			case 't':
-				current.WriteRune('\t')
-			case '\\':
-				current.WriteRune('\\')
-			case '"':
-				current.WriteRune('"')
-			case '\'':
-				current.WriteRune('\'')
-			case ' ':
-				current.WriteRune(' ')
-			default:
-				current.WriteRune(r)
-			}
+			current.WriteRune(r)
 			escapeNext = false
 			hasData = true
 			continue
