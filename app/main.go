@@ -22,7 +22,6 @@ func main() {
 	firstPrint()
 	for reader.Scan() {
 		text := reader.Text()
-		// parts := strings.Fields(text)
 		parts, err := parseCommandLine(text)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
@@ -40,37 +39,21 @@ func main() {
 		cmd := parts[0]
 		args := parts[1:]
 
-		redirectPosition, hasRedirect := checkForRedirect(parts)
+		redirectPosition, redirectType, hasRedirect := checkForRedirect(parts)
 
-		if hasRedirect {
-			filename := parts[redirectPosition+1]
-			args = parts[1:redirectPosition]
-
-			originalStdout := os.Stdout
-			file, err := os.Create(filename)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "cannot create %s: %v\n", filename, err)
-				firstPrint()
-				continue
-			}
-			os.Stdout = file
-
+		if !hasRedirect {
 			if builtin, exists := commands[cmd]; exists {
 				builtin(args)
 			} else {
 				runExternal(cmd, args)
 			}
-
-			file.Close()
-			os.Stdout = originalStdout
-		} else {
-			if builtin, exists := commands[cmd]; exists {
-				builtin(args)
-			} else {
-				runExternal(cmd, args)
-			}
+			firstPrint()
+			continue
 		}
 
+		filename := parts[redirectPosition+1]
+		args = parts[1:redirectPosition]
+		executeWithRedirect(cmd, args, filename, redirectType)
 		firstPrint()
 	}
 }
@@ -83,13 +66,43 @@ func handleExit(args []string) {
 	os.Exit(0)
 }
 
-func checkForRedirect(args []string) (redirectPosition int, hasRedirect bool) {
+func executeWithRedirect(cmd string, args []string, filename string, redirectType string) {
+	file, err := os.Create(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot create %s: %v\n", filename, err)
+		return
+	}
+	defer file.Close()
+
+	switch redirectType {
+	case "stdout":
+		originalStdout := os.Stdout
+		os.Stdout = file
+		defer func() { os.Stdout = originalStdout }()
+
+	case "stderr":
+		originalStderr := os.Stderr
+		os.Stderr = file
+		defer func() { os.Stderr = originalStderr }()
+	}
+
+	if builtin, exists := commands[cmd]; exists {
+		builtin(args)
+	} else {
+		runExternal(cmd, args)
+	}
+}
+
+func checkForRedirect(args []string) (redirectPosition int, redirectType string, hasRedirect bool) {
 	for i, arg := range args {
 		if arg == ">" || arg == "1>" {
-			return i, true
+			return i, "stdout", true
+		}
+		if arg == "2>" {
+			return i, "stderr", true
 		}
 	}
-	return 0, false
+	return 0, "", false
 }
 func parseCommandLine(line string) ([]string, error) {
 	var args []string
