@@ -83,7 +83,6 @@ func handleExit(args []string) {
 	os.Exit(0)
 }
 
-// checkForRedirect finds the position of redirect operator (> or 1>) in the arguments
 func checkForRedirect(args []string) (redirectPosition int, hasRedirect bool) {
 	for i, arg := range args {
 		if arg == ">" || arg == "1>" {
@@ -194,9 +193,7 @@ func runExternal(name string, args []string) {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
-	if err := cmd.Run(); err != nil {
-		fmt.Println("error:", err)
-	}
+	cmd.Run()
 }
 
 func handleCd(args []string) {
