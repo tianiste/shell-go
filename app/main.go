@@ -8,10 +8,10 @@ import (
 	"strings"
 )
 
-var commands map[string]func(string)
+var commands map[string]func([]string)
 
 func main() {
-	commands = map[string]func(string){
+	commands = map[string]func([]string){
 		"exit": handleExit,
 		"echo": handleEcho,
 		"type": handleType,
@@ -29,7 +29,6 @@ func main() {
 			firstPrint()
 			continue
 		}
-		fmt.Println(parts)
 		if strings.Trim(text, " ") == "" {
 			firstPrint()
 			continue
@@ -39,13 +38,37 @@ func main() {
 			continue
 		}
 		cmd := parts[0]
-		args := text[len(cmd):]
-		fmt.Println(args)
-		args = normaliseString(args)
-		if builtin, exists := commands[cmd]; exists {
-			builtin(args)
+		args := parts[1:]
+
+		redirectPosition, hasRedirect := checkForRedirect(parts)
+
+		if hasRedirect {
+			filename := parts[redirectPosition+1]
+			args = parts[1:redirectPosition]
+
+			originalStdout := os.Stdout
+			file, err := os.Create(filename)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "cannot create %s: %v\n", filename, err)
+				firstPrint()
+				continue
+			}
+			os.Stdout = file
+
+			if builtin, exists := commands[cmd]; exists {
+				builtin(args)
+			} else {
+				runExternal(cmd, args)
+			}
+
+			file.Close()
+			os.Stdout = originalStdout
 		} else {
-			runExternal(cmd, parts[1:])
+			if builtin, exists := commands[cmd]; exists {
+				builtin(args)
+			} else {
+				runExternal(cmd, args)
+			}
 		}
 
 		firstPrint()
@@ -54,24 +77,13 @@ func main() {
 
 func firstPrint() {
 	fmt.Print("$ ")
-
 }
 
-func normaliseString(input string) (output string) {
-	return strings.Trim(input, " ")
-}
-
-func handleExit(args string) {
+func handleExit(args []string) {
 	os.Exit(0)
 }
 
-func parseRedirect(destinationFileName, content string) error {
-	if err := os.WriteFile(destinationFileName, []byte(content), 0666); err != nil {
-		fmt.Println(err)
-		return err
-	}
-	return nil
-}
+// checkForRedirect finds the position of redirect operator (> or 1>) in the arguments
 func checkForRedirect(args []string) (redirectPosition int, hasRedirect bool) {
 	for i, arg := range args {
 		if arg == ">" || arg == "1>" {
@@ -79,22 +91,6 @@ func checkForRedirect(args []string) (redirectPosition int, hasRedirect bool) {
 		}
 	}
 	return 0, false
-}
-func redirect(args []string, redirectPosition int) {
-	command := args[0]
-	if command == "echo" {
-		parseRedirect(args[redirectPosition+1], args[redirectPosition-1])
-
-	}
-	if command == "cat" {
-		_, err := os.Stat(args[redirectPosition-1])
-		if err != nil {
-			fmt.Printf("%s: %s: No such file or directory", command, args[1])
-			return
-		}
-		content, err := os.ReadFile(args[redirectPosition-1])
-		parseRedirect(args[redirectPosition+1], string(content))
-	}
 }
 func parseCommandLine(line string) ([]string, error) {
 	var args []string
@@ -154,28 +150,27 @@ func parseCommandLine(line string) ([]string, error) {
 	return args, nil
 }
 
-func handleEcho(input string) {
-	args, err := parseCommandLine(input)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		return
-	}
-
+func handleEcho(args []string) {
 	fmt.Println(strings.Join(args, " "))
 }
-func handleType(args string) {
-	if _, exists := commands[args]; exists {
-		fmt.Println(args, "is a shell builtin")
+
+func handleType(args []string) {
+	if len(args) == 0 {
 		return
 	}
-	if path, err := exec.LookPath(args); err == nil {
-		fmt.Println(args, "is", path)
+	command := args[0]
+	if _, exists := commands[command]; exists {
+		fmt.Println(command, "is a shell builtin")
 		return
 	}
-	fmt.Println(args + ": not found")
+	if path, err := exec.LookPath(command); err == nil {
+		fmt.Println(command, "is", path)
+		return
+	}
+	fmt.Println(command + ": not found")
 }
 
-func handlePwd(args string) {
+func handlePwd(args []string) {
 	dir, err := os.Getwd()
 	if err != nil {
 		fmt.Println(err)
@@ -204,8 +199,12 @@ func runExternal(name string, args []string) {
 	}
 }
 
-func handleCd(path string) {
-	if normaliseString(path) == "~" {
+func handleCd(args []string) {
+	if len(args) == 0 {
+		return
+	}
+	path := args[0]
+	if path == "~" {
 		homeDir, err := os.UserHomeDir() // could have been made a global variable so its not re initialised every time a user tries to do cd ~
 		if err != nil {
 			fmt.Printf("cd: %s: No such file or directory \n", path)
