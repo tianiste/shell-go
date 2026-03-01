@@ -20,7 +20,6 @@ func main() {
 	}
 	reader := bufio.NewScanner(os.Stdin)
 	firstPrint()
-
 	for reader.Scan() {
 		text := reader.Text()
 		// parts := strings.Fields(text)
@@ -30,6 +29,7 @@ func main() {
 			firstPrint()
 			continue
 		}
+		fmt.Println(parts)
 		if strings.Trim(text, " ") == "" {
 			firstPrint()
 			continue
@@ -40,6 +40,7 @@ func main() {
 		}
 		cmd := parts[0]
 		args := text[len(cmd):]
+		fmt.Println(args)
 		args = normaliseString(args)
 		if builtin, exists := commands[cmd]; exists {
 			builtin(args)
@@ -64,6 +65,37 @@ func handleExit(args string) {
 	os.Exit(0)
 }
 
+func parseRedirect(destinationFileName, content string) error {
+	if err := os.WriteFile(destinationFileName, []byte(content), 0666); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+func checkForRedirect(args []string) (redirectPosition int, hasRedirect bool) {
+	for i, arg := range args {
+		if arg == ">" || arg == "1>" {
+			return i, true
+		}
+	}
+	return 0, false
+}
+func redirect(args []string, redirectPosition int) {
+	command := args[0]
+	if command == "echo" {
+		parseRedirect(args[redirectPosition+1], args[redirectPosition-1])
+
+	}
+	if command == "cat" {
+		_, err := os.Stat(args[redirectPosition-1])
+		if err != nil {
+			fmt.Printf("%s: %s: No such file or directory", command, args[1])
+			return
+		}
+		content, err := os.ReadFile(args[redirectPosition-1])
+		parseRedirect(args[redirectPosition+1], string(content))
+	}
+}
 func parseCommandLine(line string) ([]string, error) {
 	var args []string
 	var current strings.Builder
