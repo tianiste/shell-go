@@ -98,7 +98,7 @@ func executeWithRedirect(cmd string, args []string, filename string, redirectTyp
 		os.Stdout = file
 		defer func() { os.Stdout = originalStdout }()
 
-	case "stderr, appendStderr":
+	case "stderr", "appendStderr":
 		originalStderr := os.Stderr
 		os.Stderr = file
 		defer func() { os.Stderr = originalStderr }()
