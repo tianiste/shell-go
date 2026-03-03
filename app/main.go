@@ -67,15 +67,31 @@ func handleExit(args []string) {
 }
 
 func executeWithRedirect(cmd string, args []string, filename string, redirectType string) {
-	file, err := os.Create(filename)
+	var (
+		file *os.File
+		err  error
+	)
+
+	switch redirectType {
+	case "stdout": // >
+		file, err = os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	case "stderr": // 2>
+		file, err = os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	case "appendStdout": // >>
+		file, err = os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	default:
+		fmt.Fprintf(os.Stderr, "unknown redirect type: %s\n", redirectType)
+		return
+	}
+
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cannot create %s: %v\n", filename, err)
+		fmt.Fprintf(os.Stderr, "cannot open %s: %v\n", filename, err)
 		return
 	}
 	defer file.Close()
 
 	switch redirectType {
-	case "stdout":
+	case "stdout", "appendStdout":
 		originalStdout := os.Stdout
 		os.Stdout = file
 		defer func() { os.Stdout = originalStdout }()
@@ -100,6 +116,9 @@ func checkForRedirect(args []string) (redirectPosition int, redirectType string,
 		}
 		if arg == "2>" {
 			return i, "stderr", true
+		}
+		if arg == ">>" {
+			return i, "appendStdout", true
 		}
 	}
 	return 0, "", false
