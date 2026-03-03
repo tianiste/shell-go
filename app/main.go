@@ -79,6 +79,8 @@ func executeWithRedirect(cmd string, args []string, filename string, redirectTyp
 		file, err = os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	case "appendStdout": // >>
 		file, err = os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	case "appendStderr": // 2>>
+		file, err = os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown redirect type: %s\n", redirectType)
 		return
@@ -96,7 +98,7 @@ func executeWithRedirect(cmd string, args []string, filename string, redirectTyp
 		os.Stdout = file
 		defer func() { os.Stdout = originalStdout }()
 
-	case "stderr":
+	case "stderr, appendStderr":
 		originalStderr := os.Stderr
 		os.Stderr = file
 		defer func() { os.Stderr = originalStderr }()
@@ -119,6 +121,9 @@ func checkForRedirect(args []string) (redirectPosition int, redirectType string,
 		}
 		if arg == ">>" || arg == "1>>" {
 			return i, "appendStdout", true
+		}
+		if arg == "2>>" {
+			return i, "appendStderr", true
 		}
 	}
 	return 0, "", false
