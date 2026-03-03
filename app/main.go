@@ -117,7 +117,7 @@ func checkForRedirect(args []string) (redirectPosition int, redirectType string,
 		if arg == "2>" {
 			return i, "stderr", true
 		}
-		if arg == ">>" {
+		if arg == ">>" || arg == "1>>" {
 			return i, "appendStdout", true
 		}
 	}
