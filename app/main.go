@@ -15,16 +15,27 @@ import (
 var commands map[string]func([]string)
 
 type BeepCompleter struct {
-	inner readline.AutoCompleter
+	inner      readline.AutoCompleter
+	isEmptyTab bool
 }
 
 func (b *BeepCompleter) Do(line []rune, pos int) ([][]rune, int) {
-	candidates, offset := b.inner.Do(line, pos)
-
-	if len(candidates) == 0 {
-		fmt.Print("\a") // play beep
+	if len(line) == 0 && pos == 0 {
+		if !b.isEmptyTab {
+			b.isEmptyTab = true
+			fmt.Print("\a")
+			return nil, 0
+		}
+		b.isEmptyTab = false
+		return b.inner.Do(line, pos)
 	}
 
+	b.isEmptyTab = false
+
+	candidates, offset := b.inner.Do(line, pos)
+	if len(candidates) == 0 {
+		fmt.Print("\a")
+	}
 	return candidates, offset
 }
 
@@ -46,7 +57,6 @@ func main() {
 		"cd":   handleCd,
 	}
 	completers := buildCompleter()
-
 	paths := filepath.SplitList(os.Getenv("PATH"))
 	for _, path := range paths {
 		files, _ := os.ReadDir(path)
@@ -59,11 +69,18 @@ func main() {
 
 		}
 	}
+	base := readline.NewPrefixCompleter(completers...)
+	beepCompleter := &BeepCompleter{inner: base}
+
 	reader, err := readline.NewEx(&readline.Config{
-		Prompt:      "$ ",
-		HistoryFile: "/tmp/my_shell_history",
-		AutoComplete: &BeepCompleter{
-			inner: readline.NewPrefixCompleter(completers...),
+		Prompt:       "$ ",
+		HistoryFile:  "/tmp/my_shell_history",
+		AutoComplete: beepCompleter,
+		FuncFilterInputRune: func(r rune) (rune, bool) {
+			if r != readline.CharTab {
+				beepCompleter.isEmptyTab = false
+			}
+			return r, true
 		},
 		InterruptPrompt: "^C",
 		EOFPrompt:       "exit",
