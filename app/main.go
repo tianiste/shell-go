@@ -1,11 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/chzyer/readline"
 )
 
 var commands map[string]func([]string)
@@ -18,10 +21,33 @@ func main() {
 		"pwd":  handlePwd,
 		"cd":   handleCd,
 	}
-	reader := bufio.NewScanner(os.Stdin)
-	firstPrint()
-	for reader.Scan() {
-		text := reader.Text()
+	var completer = readline.NewPrefixCompleter(
+		readline.PcItem("exit"),
+		readline.PcItem("echo"),
+		readline.PcItem("type"),
+		readline.PcItem("pwd"),
+		readline.PcItem("cd"),
+	)
+	reader, err := readline.NewEx(&readline.Config{
+		Prompt:          "$ ",
+		HistoryFile:     "/tmp/my_shell_history",
+		AutoComplete:    completer,
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer reader.Close()
+	for {
+		text, err := reader.Readline()
+		if err == readline.ErrInterrupt {
+			continue
+		}
+		if err == io.EOF {
+			break
+		}
 		parts, err := parseCommandLine(text)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
@@ -54,7 +80,6 @@ func main() {
 		filename := parts[redirectPosition+1]
 		args = parts[1:redirectPosition]
 		executeWithRedirect(cmd, args, filename, redirectType)
-		firstPrint()
 	}
 }
 
