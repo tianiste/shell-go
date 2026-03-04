@@ -51,6 +51,7 @@ func (c *DoubleTabCompleter) Do(line []rune, pos int) ([][]rune, int) {
 	sort.Strings(names)
 	fmt.Println()
 	fmt.Println(strings.Join(names, "  "))
+	fmt.Printf("$ %s", string(line))
 
 	return nil, 0
 }
