@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/chzyer/readline"
@@ -40,7 +41,16 @@ func (c *DoubleTabCompleter) Do(line []rune, pos int) ([][]rune, int) {
 	}
 
 	c.armed = false
-	return candidates, offset
+
+	var names []string
+	for _, cand := range candidates {
+		names = append(names, string(cand))
+	}
+	sort.Strings(names)
+	fmt.Println()
+	fmt.Println(strings.Join(names, "  "))
+
+	return nil, 0
 }
 
 func buildCompleter() []readline.PrefixCompleterInterface {
@@ -60,7 +70,15 @@ func main() {
 		"pwd":  handlePwd,
 		"cd":   handleCd,
 	}
-	completers := buildCompleter()
+
+	seenCommands := make(map[string]bool)
+	completers := []readline.PrefixCompleterInterface{}
+
+	for command := range commands {
+		seenCommands[command] = true
+		completers = append(completers, readline.PcItem(command))
+	}
+
 	paths := filepath.SplitList(os.Getenv("PATH"))
 	for _, path := range paths {
 		files, _ := os.ReadDir(path)
@@ -68,7 +86,11 @@ func main() {
 		for _, file := range files {
 			info, _ := file.Info()
 			if !info.IsDir() && info.Mode().Perm()&0111 != 0 {
-				completers = append(completers, readline.PcItem(info.Name()))
+				name := info.Name()
+				if !seenCommands[name] {
+					seenCommands[name] = true
+					completers = append(completers, readline.PcItem(name))
+				}
 			}
 
 		}
