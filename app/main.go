@@ -14,28 +14,32 @@ import (
 
 var commands map[string]func([]string)
 
-type BeepCompleter struct {
-	inner      readline.AutoCompleter
-	isEmptyTab bool
+type DoubleTabCompleter struct {
+	inner readline.AutoCompleter
+	armed bool
 }
 
-func (b *BeepCompleter) Do(line []rune, pos int) ([][]rune, int) {
-	if len(line) == 0 && pos == 0 {
-		if !b.isEmptyTab {
-			b.isEmptyTab = true
-			fmt.Print("\a")
-			return nil, 0
-		}
-		b.isEmptyTab = false
-		return b.inner.Do(line, pos)
-	}
+func (c *DoubleTabCompleter) Do(line []rune, pos int) ([][]rune, int) {
+	candidates, offset := c.inner.Do(line, pos)
 
-	b.isEmptyTab = false
-
-	candidates, offset := b.inner.Do(line, pos)
 	if len(candidates) == 0 {
+		c.armed = false
 		fmt.Print("\a")
+		return nil, 0
 	}
+
+	if len(candidates) == 1 {
+		c.armed = false
+		return candidates, offset
+	}
+
+	if !c.armed {
+		c.armed = true
+		fmt.Print("\a")
+		return nil, 0
+	}
+
+	c.armed = false
 	return candidates, offset
 }
 
@@ -70,15 +74,15 @@ func main() {
 		}
 	}
 	base := readline.NewPrefixCompleter(completers...)
-	beepCompleter := &BeepCompleter{inner: base}
+	doubleTabCompleter := &DoubleTabCompleter{inner: base}
 
 	reader, err := readline.NewEx(&readline.Config{
 		Prompt:       "$ ",
 		HistoryFile:  "/tmp/my_shell_history",
-		AutoComplete: beepCompleter,
+		AutoComplete: doubleTabCompleter,
 		FuncFilterInputRune: func(r rune) (rune, bool) {
 			if r != readline.CharTab {
-				beepCompleter.isEmptyTab = false
+				doubleTabCompleter.armed = false
 			}
 			return r, true
 		},
