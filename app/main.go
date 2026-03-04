@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/chzyer/readline"
@@ -27,14 +28,13 @@ func (b *BeepCompleter) Do(line []rune, pos int) ([][]rune, int) {
 	return candidates, offset
 }
 
-func buildCompleter() *readline.PrefixCompleter {
+func buildCompleter() []readline.PrefixCompleterInterface {
 	items := []readline.PrefixCompleterInterface{}
 
 	for command := range commands {
 		items = append(items, readline.PcItem(command))
 	}
-	return readline.NewPrefixCompleter(items...)
-
+	return items
 }
 
 func main() {
@@ -45,17 +45,29 @@ func main() {
 		"pwd":  handlePwd,
 		"cd":   handleCd,
 	}
-	completer := &BeepCompleter{
-		inner: buildCompleter(),
+	completers := buildCompleter()
+
+	paths := filepath.SplitList(os.Getenv("PATH"))
+	for _, path := range paths {
+		files, _ := os.ReadDir(path)
+
+		for _, file := range files {
+			info, _ := file.Info()
+			if !info.IsDir() && info.Mode().Perm()&0111 != 0 {
+				completers = append(completers, readline.PcItem(info.Name()))
+			}
+
+		}
 	}
 	reader, err := readline.NewEx(&readline.Config{
-		Prompt:          "$ ",
-		HistoryFile:     "/tmp/my_shell_history",
-		AutoComplete:    completer,
+		Prompt:      "$ ",
+		HistoryFile: "/tmp/my_shell_history",
+		AutoComplete: &BeepCompleter{
+			inner: readline.NewPrefixCompleter(completers...),
+		},
 		InterruptPrompt: "^C",
 		EOFPrompt:       "exit",
 	})
-
 	if err != nil {
 		log.Fatal(err)
 	}
