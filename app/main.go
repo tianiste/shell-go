@@ -42,24 +42,17 @@ func (c *DoubleTabCompleter) Do(line []rune, pos int) ([][]rune, int) {
 
 	c.armed = false
 
+	prefix := string(line[pos-offset : pos])
 	var names []string
 	for _, cand := range candidates {
-		names = append(names, string(cand))
+		fullWord := prefix + string(cand)
+		names = append(names, fullWord)
 	}
 	sort.Strings(names)
 	fmt.Println()
 	fmt.Println(strings.Join(names, "  "))
 
 	return nil, 0
-}
-
-func buildCompleter() []readline.PrefixCompleterInterface {
-	items := []readline.PrefixCompleterInterface{}
-
-	for command := range commands {
-		items = append(items, readline.PcItem(command))
-	}
-	return items
 }
 
 func main() {
