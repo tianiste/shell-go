@@ -13,6 +13,30 @@ import (
 
 var commands map[string]func([]string)
 
+type BeepCompleter struct {
+	inner readline.AutoCompleter
+}
+
+func (b *BeepCompleter) Do(line []rune, pos int) ([][]rune, int) {
+	candidates, offset := b.inner.Do(line, pos)
+
+	if len(candidates) == 0 {
+		fmt.Print("\a") // play beep
+	}
+
+	return candidates, offset
+}
+
+func buildCompleter() *readline.PrefixCompleter {
+	items := []readline.PrefixCompleterInterface{}
+
+	for command := range commands {
+		items = append(items, readline.PcItem(command))
+	}
+	return readline.NewPrefixCompleter(items...)
+
+}
+
 func main() {
 	commands = map[string]func([]string){
 		"exit": handleExit,
@@ -21,13 +45,9 @@ func main() {
 		"pwd":  handlePwd,
 		"cd":   handleCd,
 	}
-	var completer = readline.NewPrefixCompleter(
-		readline.PcItem("exit"),
-		readline.PcItem("echo"),
-		readline.PcItem("type"),
-		readline.PcItem("pwd"),
-		readline.PcItem("cd"),
-	)
+	completer := &BeepCompleter{
+		inner: buildCompleter(),
+	}
 	reader, err := readline.NewEx(&readline.Config{
 		Prompt:          "$ ",
 		HistoryFile:     "/tmp/my_shell_history",
