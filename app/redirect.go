@@ -29,7 +29,17 @@ func executeWithRedirect(cmd string, args []string, filename string, redirectTyp
 	}
 	defer file.Close()
 
-	redirectOutput(file, redirectType)
+	switch redirectType {
+	case "stdout", "appendStdout":
+		originalStdout := os.Stdout
+		os.Stdout = file
+		defer func() { os.Stdout = originalStdout }()
+	case "stderr", "appendStderr":
+		originalStderr := os.Stderr
+		os.Stderr = file
+		defer func() { os.Stderr = originalStderr }()
+	}
+
 	runCommand(cmd, args)
 }
 
@@ -41,18 +51,5 @@ func openRedirectFile(filename string, redirectType string) (*os.File, error) {
 		return os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	default:
 		return nil, fmt.Errorf("unknown redirect type: %s", redirectType)
-	}
-}
-
-func redirectOutput(file *os.File, redirectType string) {
-	switch redirectType {
-	case "stdout", "appendStdout":
-		originalStdout := os.Stdout
-		os.Stdout = file
-		defer func() { os.Stdout = originalStdout }()
-	case "stderr", "appendStderr":
-		originalStderr := os.Stderr
-		os.Stderr = file
-		defer func() { os.Stderr = originalStderr }()
 	}
 }
