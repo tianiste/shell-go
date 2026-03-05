@@ -20,6 +20,33 @@ type DoubleTabCompleter struct {
 	armed bool
 }
 
+func longestCommonPrefix(candidates [][]rune) string {
+	if len(candidates) == 0 {
+		return ""
+	}
+	if len(candidates) == 1 {
+		return string(candidates[0])
+	}
+
+	minLen := len(candidates[0])
+	for _, cand := range candidates[1:] {
+		if len(cand) < minLen {
+			minLen = len(cand)
+		}
+	}
+
+	for i := 0; i < minLen; i++ {
+		char := candidates[0][i]
+		for _, cand := range candidates[1:] {
+			if cand[i] != char {
+				return string(candidates[0][:i])
+			}
+		}
+	}
+
+	return string(candidates[0][:minLen])
+}
+
 func (c *DoubleTabCompleter) Do(line []rune, pos int) ([][]rune, int) {
 	candidates, offset := c.inner.Do(line, pos)
 
@@ -32,6 +59,13 @@ func (c *DoubleTabCompleter) Do(line []rune, pos int) ([][]rune, int) {
 	if len(candidates) == 1 {
 		c.armed = false
 		return candidates, offset
+	}
+
+	lcp := longestCommonPrefix(candidates)
+
+	if len(lcp) > 0 {
+		c.armed = false
+		return [][]rune{[]rune(lcp)}, offset
 	}
 
 	if !c.armed {
