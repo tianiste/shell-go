@@ -75,6 +75,7 @@ func executeCommand(text string) {
 	filename := parts[redirectPosition+1]
 	args = parts[1:redirectPosition]
 	executeWithRedirect(cmd, args, filename, redirectType)
+	printPrompt()
 }
 
 func runCommand(cmd string, args []string) {
