@@ -61,6 +61,14 @@ func executeCommand(text string) {
 		return
 	}
 
+	if hasPipeline(parts) {
+		if err := executePipeline(parts); err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+		}
+		printPrompt()
+		return
+	}
+
 	cmd := parts[0]
 	args := parts[1:]
 
