@@ -104,7 +104,7 @@ func handleHistory(args []string) {
 	}
 	lines := strings.Split(strings.TrimSpace(string(content)), "\n")
 	for i, line := range lines {
-		fmt.Printf("%d %s\n", i+1, line)
+		fmt.Printf("\t%d %s\n", i+1, line)
 	}
 
 }
