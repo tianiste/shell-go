@@ -9,11 +9,12 @@ import (
 
 func initializeCommands() {
 	commands = map[string]func([]string){
-		"exit": handleExit,
-		"echo": handleEcho,
-		"type": handleType,
-		"pwd":  handlePwd,
-		"cd":   handleCd,
+		"exit":    handleExit,
+		"echo":    handleEcho,
+		"type":    handleType,
+		"pwd":     handlePwd,
+		"cd":      handleCd,
+		"history": handleHistory,
 	}
 }
 
@@ -71,4 +72,8 @@ func handleCd(args []string) {
 	if err := os.Chdir(path); err != nil {
 		fmt.Printf("cd: %s: No such file or directory\n", path)
 	}
+}
+
+func handleHistory(args []string) {
+
 }
