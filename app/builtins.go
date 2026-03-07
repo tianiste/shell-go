@@ -74,6 +74,37 @@ func handleCd(args []string) {
 	}
 }
 
+func createHistoryFile() {
+	if _, err := os.Stat(historyFile); os.IsNotExist(err) {
+		os.WriteFile(historyFile, []byte{}, 0644)
+	}
+}
+
+func writeToHistory(command string) {
+	createHistoryFile()
+	f, err := os.OpenFile(historyFile, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("Error writing to history:", err)
+		return
+	}
+	defer f.Close()
+
+	if _, err := f.WriteString(command + "\n"); err != nil {
+		fmt.Println("Error writing to history:", err)
+	}
+}
+
 func handleHistory(args []string) {
+	createHistoryFile()
+	os.ReadFile(historyFile)
+	content, err := os.ReadFile(historyFile)
+	if err != nil {
+		fmt.Println("Error reading history:", err)
+		return
+	}
+	lines := strings.Split(strings.TrimSpace(string(content)), "\n")
+	for i, line := range lines {
+		fmt.Printf("%d %s\n", i+1, line)
+	}
 
 }
