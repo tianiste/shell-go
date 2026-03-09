@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -96,15 +97,27 @@ func writeToHistory(command string) {
 
 func handleHistory(args []string) {
 	createHistoryFile()
-	os.ReadFile(historyFile)
 	content, err := os.ReadFile(historyFile)
 	if err != nil {
 		fmt.Println("Error reading history:", err)
 		return
 	}
 	lines := strings.Split(strings.TrimSpace(string(content)), "\n")
-	for i, line := range lines {
-		fmt.Printf("    %d  %s\n", i+1, line)
+	startIndex := 0
+
+	if len(args) == 1 {
+		numberOfLinesToDisplay, err := strconv.Atoi(args[0])
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		if numberOfLinesToDisplay < len(lines) {
+			startIndex = len(lines) - numberOfLinesToDisplay
+			lines = lines[startIndex:]
+		}
 	}
 
+	for i, line := range lines {
+		fmt.Printf("    %d  %s\n", startIndex+i+1, line)
+	}
 }
