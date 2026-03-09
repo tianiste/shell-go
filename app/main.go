@@ -17,7 +17,10 @@ const (
 	optionSpacing = "  "
 )
 
-var commands map[string]func([]string)
+var (
+	commands    map[string]func([]string)
+	historyList []string
+)
 
 func main() {
 	initializeCommands()
@@ -61,6 +64,9 @@ func executeCommand(text string) {
 		printPrompt()
 		return
 	}
+
+	// Add command to in-memory history
+	historyList = append(historyList, strings.TrimSpace(text))
 
 	if hasPipeline(parts) {
 		if err := executePipeline(parts); err != nil {

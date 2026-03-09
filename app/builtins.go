@@ -100,13 +100,23 @@ func writeToHistory(command string) {
 }
 
 func handleHistory(args []string) {
-	createHistoryFile()
-	content, err := os.ReadFile(historyFile)
-	if err != nil {
-		fmt.Println("Error reading history:", err)
+	if len(args) >= 2 && args[0] == "-r" {
+		filePath := args[1]
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			fmt.Println("Error reading history file:", err)
+			return
+		}
+		lines := strings.Split(strings.TrimSpace(string(content)), "\n")
+		for _, line := range lines {
+			if strings.TrimSpace(line) != "" {
+				historyList = append(historyList, line)
+			}
+		}
 		return
 	}
-	lines := strings.Split(strings.TrimSpace(string(content)), "\n")
+
+	lines := historyList
 	startIndex := 0
 
 	if len(args) == 1 {
