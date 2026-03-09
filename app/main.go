@@ -21,6 +21,7 @@ var commands map[string]func([]string)
 
 func main() {
 	initializeCommands()
+	clearHistory()
 	completers := buildCompleters()
 	baseCompleter := readline.NewPrefixCompleter(completers...)
 	doubleTabCompleter := &DoubleTabCompleter{inner: baseCompleter}

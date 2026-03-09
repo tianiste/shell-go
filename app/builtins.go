@@ -81,6 +81,10 @@ func createHistoryFile() {
 	}
 }
 
+func clearHistory() {
+	os.WriteFile(historyFile, []byte{}, 0644)
+}
+
 func writeToHistory(command string) {
 	createHistoryFile()
 	f, err := os.OpenFile(historyFile, os.O_APPEND|os.O_WRONLY, 0644)
