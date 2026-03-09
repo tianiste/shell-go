@@ -40,7 +40,6 @@ func runShell(reader *readline.Instance) {
 		if err == readline.ErrInterrupt {
 			continue
 		}
-		writeToHistory(text)
 		if err == io.EOF {
 			break
 		}
