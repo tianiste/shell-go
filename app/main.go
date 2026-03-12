@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	commands    map[string]func([]string)
+	commands    map[string]func(*Command)
 	historyList []string
 )
 
@@ -65,7 +65,6 @@ func executeCommand(text string) {
 		return
 	}
 
-	// Add command to in-memory history
 	historyList = append(historyList, strings.TrimSpace(text))
 
 	if hasPipeline(parts) {
@@ -95,7 +94,9 @@ func executeCommand(text string) {
 
 func runCommand(cmd string, args []string) {
 	if builtin, exists := commands[cmd]; exists {
-		builtin(args)
+		parts := append([]string{cmd}, args...)
+		commandStruct := ParseCommand(parts)
+		builtin(commandStruct)
 	} else {
 		runExternal(cmd, args)
 	}

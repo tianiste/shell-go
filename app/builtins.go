@@ -4,12 +4,26 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sort"
 	"strconv"
 	"strings"
 )
 
+var commandDescriptions = map[string]string{
+	"man":     "Display manual pages for commands",
+	"help":    "Display information about builtin commands",
+	"exit":    "Exit the shell",
+	"echo":    "Display a line of text",
+	"type":    "Display information about command type",
+	"pwd":     "Print the current working directory",
+	"cd":      "Change the current directory",
+	"history": "Display or manipulate the history list",
+}
+
 func initializeCommands() {
-	commands = map[string]func([]string){
+	commands = map[string]func(*Command){
+		"man":     handleMan,
+		"help":    handleHelp,
 		"exit":    handleExit,
 		"echo":    handleEcho,
 		"type":    handleType,
@@ -19,19 +33,48 @@ func initializeCommands() {
 	}
 }
 
-func handleExit(args []string) {
+func handleHelp(cmd *Command) {
+	if len(cmd.Args) > 0 {
+		cmdName := cmd.Args[0]
+		if desc, exists := commandDescriptions[cmdName]; exists {
+			fmt.Printf("%s: %s\n", cmdName, desc)
+		} else {
+			fmt.Printf("help: no help topics match '%s'\n", cmdName)
+		}
+		return
+	}
+
+	fmt.Println("Available shell builtins:")
+
+	cmdNames := make([]string, 0, len(commands))
+	for cmdName := range commands {
+		cmdNames = append(cmdNames, cmdName)
+	}
+	sort.Strings(cmdNames)
+
+	for _, cmdName := range cmdNames {
+		if desc, exists := commandDescriptions[cmdName]; exists {
+			fmt.Printf("  %-12s %s\n", cmdName, desc)
+		} else {
+			fmt.Printf("  %s\n", cmdName)
+		}
+	}
+	fmt.Println("\nType 'help <command>' for more information on a specific command.")
+}
+
+func handleExit(cmd *Command) {
 	os.Exit(0)
 }
 
-func handleEcho(args []string) {
-	fmt.Println(strings.Join(args, " "))
+func handleEcho(cmd *Command) {
+	fmt.Println(strings.Join(cmd.Args, " "))
 }
 
-func handleType(args []string) {
-	if len(args) == 0 {
+func handleType(cmd *Command) {
+	if len(cmd.Args) == 0 {
 		return
 	}
-	command := args[0]
+	command := cmd.Args[0]
 
 	if _, exists := commands[command]; exists {
 		fmt.Println(command, "is a shell builtin")
@@ -46,7 +89,7 @@ func handleType(args []string) {
 	fmt.Println(command + ": not found")
 }
 
-func handlePwd(args []string) {
+func handlePwd(cmd *Command) {
 	dir, err := os.Getwd()
 	if err != nil {
 		fmt.Println(err)
@@ -55,12 +98,12 @@ func handlePwd(args []string) {
 	fmt.Println(dir)
 }
 
-func handleCd(args []string) {
-	if len(args) == 0 {
+func handleCd(cmd *Command) {
+	if len(cmd.Args) == 0 {
 		return
 	}
 
-	path := args[0]
+	path := cmd.Args[0]
 	if path == "~" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
@@ -85,23 +128,24 @@ func clearHistory() {
 	os.WriteFile(historyFile, []byte{}, 0644)
 }
 
-func writeToHistory(command string) {
-	createHistoryFile()
-	f, err := os.OpenFile(historyFile, os.O_APPEND|os.O_WRONLY, 0644)
+func writeToHistory(filePath string) error {
+	err := os.WriteFile(filePath, []byte(strings.Join(historyList, "\n")+"\n"), 0644)
 	if err != nil {
-		fmt.Println("Error writing to history:", err)
-		return
+		return fmt.Errorf("Error writing history file %s", err)
 	}
-	defer f.Close()
+	return nil
 
-	if _, err := f.WriteString(command + "\n"); err != nil {
-		fmt.Println("Error writing to history:", err)
-	}
 }
 
-func handleHistory(args []string) {
-	if len(args) >= 2 && args[0] == "-r" {
-		filePath := args[1]
+func handleHistory(cmd *Command) {
+	if filePath, hasW := cmd.GetFlag("w"); hasW {
+		if err := writeToHistory(filePath); err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
+	if filePath, hasR := cmd.GetFlag("r"); hasR {
 		content, err := os.ReadFile(filePath)
 		if err != nil {
 			fmt.Println("Error reading history file:", err)
@@ -119,16 +163,18 @@ func handleHistory(args []string) {
 	lines := historyList
 	startIndex := 0
 
-	if len(args) == 1 {
-		numberOfLinesToDisplay, err := strconv.Atoi(args[0])
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		if numberOfLinesToDisplay < len(lines) {
-			startIndex = len(lines) - numberOfLinesToDisplay
-			lines = lines[startIndex:]
-		}
+	var limit int
+	var err error
+
+	if nValue, hasN := cmd.GetFlag("n"); hasN {
+		limit, err = strconv.Atoi(nValue)
+	} else if len(cmd.Args) > 0 {
+		limit, err = strconv.Atoi(cmd.Args[0])
+	}
+
+	if err == nil && limit > 0 && limit < len(lines) {
+		startIndex = len(lines) - limit
+		lines = lines[startIndex:]
 	}
 
 	for i, line := range lines {
