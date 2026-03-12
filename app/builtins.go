@@ -143,6 +143,7 @@ func handleHistory(cmd *Command) {
 			fmt.Println(err)
 			return
 		}
+		return
 	}
 
 	if filePath, hasR := cmd.GetFlag("r"); hasR {
