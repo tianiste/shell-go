@@ -142,6 +142,8 @@ func appendToHistory(filepath string) error {
 	if err != nil {
 		return fmt.Errorf("Error opening history file %w", err)
 	}
+	defer currentFile.Close()
+
 	for _, line := range historyList[lastAppendedIndex:] {
 		_, err := currentFile.WriteString(line + "\n")
 		if err != nil {
@@ -149,7 +151,6 @@ func appendToHistory(filepath string) error {
 		}
 	}
 	lastAppendedIndex = len(historyList)
-	defer currentFile.Close()
 	return nil
 }
 

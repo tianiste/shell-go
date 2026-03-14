@@ -24,7 +24,7 @@ var (
 )
 
 func main() {
-	lastAppendedIndex = len(historyFile)
+	lastAppendedIndex = len(historyList)
 	initializeCommands()
 	clearHistory()
 	completers := buildCompleters()
