@@ -145,7 +145,6 @@ func listManualPages() {
 
 	for _, cmdName := range cmdNames {
 		if page, exists := manualPages[cmdName]; exists {
-			// Get first line of description
 			firstLine := strings.Split(page.Description, "\n")[0]
 			fmt.Printf("  %-12s %s\n", cmdName, firstLine)
 		}

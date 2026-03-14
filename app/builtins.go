@@ -131,15 +131,39 @@ func clearHistory() {
 func writeToHistory(filePath string) error {
 	err := os.WriteFile(filePath, []byte(strings.Join(historyList, "\n")+"\n"), 0644)
 	if err != nil {
-		return fmt.Errorf("Error writing history file %s", err)
+		return fmt.Errorf("Error writing history file %w", err)
 	}
 	return nil
 
 }
 
+func appendToHistory(filepath string) error {
+	currentFile, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("Error opening history file %w", err)
+	}
+	for _, line := range historyList[lastAppendedIndex:] {
+		_, err := currentFile.WriteString(line + "\n")
+		if err != nil {
+			return fmt.Errorf("Error while appending history to file %w", err)
+		}
+	}
+	lastAppendedIndex = len(historyList)
+	defer currentFile.Close()
+	return nil
+}
+
 func handleHistory(cmd *Command) {
 	if filePath, hasW := cmd.GetFlag("w"); hasW {
 		if err := writeToHistory(filePath); err != nil {
+			fmt.Println(err)
+			return
+		}
+		return
+	}
+
+	if filepath, hasA := cmd.GetFlag("a"); hasA {
+		if err := appendToHistory(filepath); err != nil {
 			fmt.Println(err)
 			return
 		}

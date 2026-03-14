@@ -18,11 +18,13 @@ const (
 )
 
 var (
-	commands    map[string]func(*Command)
-	historyList []string
+	commands          map[string]func(*Command)
+	historyList       []string
+	lastAppendedIndex int
 )
 
 func main() {
+	lastAppendedIndex = len(historyFile)
 	initializeCommands()
 	clearHistory()
 	completers := buildCompleters()
