@@ -124,10 +124,6 @@ func createHistoryFile() {
 	}
 }
 
-func clearHistory() {
-	os.WriteFile(historyFile, []byte{}, 0644)
-}
-
 func writeToHistory(filePath string) error {
 	err := os.WriteFile(filePath, []byte(strings.Join(historyList, "\n")+"\n"), 0644)
 	if err != nil {

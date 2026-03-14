@@ -26,7 +26,6 @@ var (
 func main() {
 	lastAppendedIndex = len(historyList)
 	initializeCommands()
-	clearHistory()
 	completers := buildCompleters()
 	baseCompleter := readline.NewPrefixCompleter(completers...)
 	doubleTabCompleter := &DoubleTabCompleter{inner: baseCompleter}
