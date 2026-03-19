@@ -45,7 +45,6 @@ func main() {
 	completers := buildCompleters()
 	baseCompleter := readline.NewPrefixCompleter(completers...)
 	doubleTabCompleter := &DoubleTabCompleter{inner: baseCompleter}
-	defer flushHistoryOnExit()
 
 	reader, err := createReadline(doubleTabCompleter)
 	if err != nil {
@@ -54,16 +53,6 @@ func main() {
 	defer reader.Close()
 
 	runShell(reader)
-}
-
-func flushHistoryOnExit() {
-	if strings.TrimSpace(historyFile) == "" {
-		return
-	}
-
-	if err := appendToHistory(historyFile); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-	}
 }
 
 func runShell(reader *readline.Instance) {
