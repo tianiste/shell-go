@@ -63,7 +63,7 @@ func handleHelp(cmd *Command) {
 }
 
 func handleExit(cmd *Command) {
-	shellShouldExit = true
+	os.Exit(0)
 }
 
 func handleEcho(cmd *Command) {
