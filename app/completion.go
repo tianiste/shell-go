@@ -118,7 +118,7 @@ func buildCompleters() []readline.PrefixCompleterInterface {
 func createReadline(completer *DoubleTabCompleter) (*readline.Instance, error) {
 	return readline.NewEx(&readline.Config{
 		Prompt:       shellPrompt,
-		HistoryFile:  historyFile,
+		HistoryFile:  os.Getenv("HISTFILE"),
 		AutoComplete: completer,
 		FuncFilterInputRune: func(r rune) (rune, bool) {
 			if r != readline.CharTab {
