@@ -22,6 +22,7 @@ var (
 	commands          map[string]func(*Command)
 	historyList       []string
 	lastAppendedIndex int
+	shellShouldExit   bool
 )
 
 func initializeHistory() {
@@ -64,6 +65,9 @@ func runShell(reader *readline.Instance) {
 		}
 
 		executeCommand(text)
+		if shellShouldExit {
+			break
+		}
 	}
 }
 
@@ -97,6 +101,9 @@ func executeCommand(text string) {
 
 	if !hasRedirect {
 		runCommand(cmd, args)
+		if shellShouldExit {
+			return
+		}
 		printPrompt()
 		return
 	}
