@@ -41,9 +41,8 @@ func initializeHistory() {
 func main() {
 	initializeHistory()
 	initializeCommands()
-	completers := buildCompleters()
-	baseCompleter := readline.NewPrefixCompleter(completers...)
-	doubleTabCompleter := &DoubleTabCompleter{inner: baseCompleter}
+	shellCompleter := NewShellCompleter()
+	doubleTabCompleter := &DoubleTabCompleter{inner: shellCompleter}
 
 	reader, err := createReadline(doubleTabCompleter)
 	if err != nil {

@@ -10,6 +10,25 @@ import (
 	"github.com/chzyer/readline"
 )
 
+type ShellCompleter struct {
+	commandNames []string
+}
+
+func NewShellCompleter() *ShellCompleter {
+	return &ShellCompleter{commandNames: collectCommandNames()}
+}
+
+func (c *ShellCompleter) Do(line []rune, pos int) ([][]rune, int) {
+	token, tokenStart, tokenIndex := getCompletionContext(line, pos)
+	offset := pos - tokenStart
+
+	if tokenIndex == 0 {
+		return completeCommands(c.commandNames, token, offset)
+	}
+
+	return completeFileNames(token, offset)
+}
+
 type DoubleTabCompleter struct {
 	inner readline.AutoCompleter
 	armed bool
@@ -88,13 +107,13 @@ func displayCompletionOptions(line []rune, pos, offset int, candidates [][]rune)
 	fmt.Printf("%s%s", shellPrompt, string(line))
 }
 
-func buildCompleters() []readline.PrefixCompleterInterface {
+func collectCommandNames() []string {
 	seenCommands := make(map[string]bool)
-	completers := []readline.PrefixCompleterInterface{}
+	commandNames := make([]string, 0)
 
 	for command := range commands {
 		seenCommands[command] = true
-		completers = append(completers, readline.PcItem(command))
+		commandNames = append(commandNames, command)
 	}
 
 	paths := filepath.SplitList(os.Getenv("PATH"))
@@ -106,13 +125,140 @@ func buildCompleters() []readline.PrefixCompleterInterface {
 				name := info.Name()
 				if !seenCommands[name] {
 					seenCommands[name] = true
-					completers = append(completers, readline.PcItem(name))
+					commandNames = append(commandNames, name)
 				}
 			}
 		}
 	}
 
-	return completers
+	sort.Strings(commandNames)
+	return commandNames
+}
+
+func getCompletionContext(line []rune, pos int) (token string, tokenStart int, tokenIndex int) {
+	inSingleQuotes := false
+	inDoubleQuotes := false
+	escapeNext := false
+	inToken := false
+	tokenStart = pos
+
+	for i := 0; i < pos; i++ {
+		r := line[i]
+
+		if escapeNext {
+			escapeNext = false
+			if !inToken {
+				inToken = true
+				tokenStart = i
+			}
+			continue
+		}
+
+		if r == '\\' && !inSingleQuotes {
+			escapeNext = true
+			if !inToken {
+				inToken = true
+				tokenStart = i
+			}
+			continue
+		}
+
+		if r == '\'' && !inDoubleQuotes {
+			inSingleQuotes = !inSingleQuotes
+			if !inToken {
+				inToken = true
+				tokenStart = i
+			}
+			continue
+		}
+
+		if r == '"' && !inSingleQuotes {
+			inDoubleQuotes = !inDoubleQuotes
+			if !inToken {
+				inToken = true
+				tokenStart = i
+			}
+			continue
+		}
+
+		if !inSingleQuotes && !inDoubleQuotes && (r == ' ' || r == '\t') {
+			if inToken {
+				tokenIndex++
+				inToken = false
+			}
+			continue
+		}
+
+		if !inToken {
+			inToken = true
+			tokenStart = i
+		}
+	}
+
+	if !inToken {
+		return "", pos, tokenIndex
+	}
+
+	return string(line[tokenStart:pos]), tokenStart, tokenIndex
+}
+
+func completeCommands(commandNames []string, token string, offset int) ([][]rune, int) {
+	candidates := make([][]rune, 0)
+	for _, command := range commandNames {
+		if strings.HasPrefix(command, token) {
+			candidates = append(candidates, []rune(command[len(token):]))
+		}
+	}
+
+	return candidates, offset
+}
+
+func completeFileNames(token string, offset int) ([][]rune, int) {
+	dirPart := filepath.Dir(token)
+	if token == "" {
+		dirPart = "."
+	}
+
+	namePrefix := token
+	if strings.Contains(token, "/") {
+		namePrefix = filepath.Base(token)
+	}
+
+	searchDir := dirPart
+	if searchDir == "" {
+		searchDir = "."
+	}
+
+	entries, err := os.ReadDir(searchDir)
+	if err != nil {
+		return nil, offset
+	}
+
+	displayPrefix := ""
+	if token != "" && strings.Contains(token, "/") {
+		displayPrefix = strings.TrimSuffix(token, namePrefix)
+	}
+
+	candidates := make([][]rune, 0)
+	for _, entry := range entries {
+		name := entry.Name()
+		if !strings.HasPrefix(name, namePrefix) {
+			continue
+		}
+
+		completion := displayPrefix + name
+		if entry.IsDir() {
+			completion += "/"
+		}
+
+		candidates = append(candidates, []rune(completion[len(token):]))
+	}
+
+	sort.Slice(candidates, func(i, j int) bool {
+		return string(candidates[i]) < string(candidates[j])
+	})
+
+	return candidates, offset
 }
 
 func createReadline(completer *DoubleTabCompleter) (*readline.Instance, error) {
