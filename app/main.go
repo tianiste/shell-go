@@ -18,19 +18,13 @@ const (
 )
 
 var (
-	historyFile       string
+	historyFile       = os.Getenv("HISTFILE")
 	commands          map[string]func(*Command)
 	historyList       []string
 	lastAppendedIndex int
 )
 
 func main() {
-	envHistoryFile := os.Getenv("HISTFILE")
-	if len(envHistoryFile) == 0 {
-		historyFile = "/tmp/my_shell_history"
-	} else {
-		historyFile = envHistoryFile
-	}
 	lastAppendedIndex = len(historyList)
 	initializeCommands()
 	completers := buildCompleters()
