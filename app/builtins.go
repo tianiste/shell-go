@@ -10,14 +10,14 @@ import (
 )
 
 var commandDescriptions = map[string]string{
-	"man":     "Display manual pages for commands",
-	"help":    "Display information about builtin commands",
+	"man":     "Show detailed manual pages for builtins",
+	"help":    "Show quick help for builtin commands",
 	"exit":    "Exit the shell",
-	"echo":    "Display a line of text",
-	"type":    "Display information about command type",
+	"echo":    "Print text to standard output",
+	"type":    "Show whether a command is builtin or external",
 	"pwd":     "Print the current working directory",
 	"cd":      "Change the current directory",
-	"history": "Display or manipulate the history list",
+	"history": "Show, read, write, or append command history",
 }
 
 func initializeCommands() {

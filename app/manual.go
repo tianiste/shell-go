@@ -47,7 +47,7 @@ With a command name, displays a brief description of that command.`,
 		Name:     "exit",
 		Synopsis: "exit",
 		Description: `Exit the shell.
-Terminates the shell session immediately.`,
+Terminates the shell session.`,
 		Examples: []string{
 			"exit          # Exit the shell",
 		},
@@ -99,14 +99,16 @@ The special directory ~ represents the user's home directory.`,
 	},
 	"history": {
 		Name:     "history",
-		Synopsis: "history [-n NUM] [-r FILE] [-w FILE] [NUM]",
+		Synopsis: "history [-n NUM] [-r FILE] [-w FILE] [-a FILE] [NUM]",
 		Description: `Display or manipulate the history list.
 Without options, displays the command history with line numbers.
-Can be used to display a limited number of history entries, load history from a file, or write history to a file.`,
+Can be used to display a limited number of history entries, load history from a file,
+write history to a file, or append only new in-memory entries to a file.`,
 		Options: []Option{
 			{Flag: "-n NUM", Description: "Display only the last NUM entries"},
 			{Flag: "-r FILE", Description: "Read history from FILE and append to current history"},
 			{Flag: "-w FILE", Description: "Write current history to FILE"},
+			{Flag: "-a FILE", Description: "Append new history entries to FILE"},
 			{Flag: "NUM", Description: "Display only the last NUM entries (positional)"},
 		},
 		Examples: []string{
@@ -115,6 +117,7 @@ Can be used to display a limited number of history entries, load history from a 
 			"history -n 5          # Show last 5 entries",
 			"history -r file.txt   # Load history from file",
 			"history -w file.txt   # Write history to file",
+			"history -a file.txt   # Append only new entries",
 		},
 	},
 }

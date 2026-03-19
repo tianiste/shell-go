@@ -1,34 +1,51 @@
-[![progress-banner](https://backend.codecrafters.io/progress/shell/b4f3135f-7b49-4983-9f28-2a9765274c21)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# Go Mini Shell
 
-This is a starting point for Go solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+A small shell written in Go.
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+It supports common builtins, external commands, pipes, redirection, history persistence, and tab completion for commands and filenames.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Features
 
-# Passing the first stage
+- Builtins: `help`, `man`, `exit`, `echo`, `type`, `pwd`, `cd`, `history`
+- Run external commands from `PATH`
+- Pipelines and output redirection
+- History loaded from and written to `HISTFILE`
+- Tab completion:
+  - command names
+  - file and directory names
 
-The entry point for your `shell` implementation is in `app/main.go`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+## Run locally
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
+Requirements:
+
+- Go 1.25+
+
+Run directly:
+
+```bash
+go run ./app/*.go
 ```
 
-Time to move on to the next stage!
+Build a binary:
 
-# Stage 2 & beyond
+```bash
+go build -o shell ./app/*.go
+./shell
+```
 
-Note: This section is for stages 2 and beyond.
+## Example
 
-1. Ensure you have `go (1.25)` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `app/main.go`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+```bash
+$ echo hello
+hello
+$ history
+$ ls | wc -l
+```
+
+## Project layout
+
+- `app/main.go` - REPL loop and command execution
+- `app/parser.go` - command line parsing
+- `app/builtins.go` - builtin command handlers
+- `app/completion.go` - tab completion logic
+

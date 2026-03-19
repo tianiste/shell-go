@@ -1,4 +1,4 @@
-module github.com/codecrafters-io/shell-starter-go
+module mini-shell
 
 go 1.25.0
 

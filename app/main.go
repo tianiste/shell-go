@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	shellPrompt = "$ "
-	//	historyFile   = "/tmp/my_shell_history"
+	shellPrompt   = "$ "
 	bellChar      = "\a"
 	optionSpacing = "  "
 )
