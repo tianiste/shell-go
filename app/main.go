@@ -26,8 +26,6 @@ var (
 
 func main() {
 	envHistoryFile := os.Getenv("HISTFILE")
-	fmt.Println(envHistoryFile)
-	fmt.Println(len(envHistoryFile))
 	if len(envHistoryFile) == 0 {
 		historyFile = "/tmp/my_shell_history"
 	} else {
