@@ -45,6 +45,11 @@ func (c *DoubleTabCompleter) Do(line []rune, pos int) ([][]rune, int) {
 
 	if len(candidates) == 1 {
 		c.armed = false
+		completion := string(candidates[0])
+		if completion != "" && !strings.HasSuffix(completion, "/") && !strings.HasSuffix(completion, " ") {
+			completion += " "
+			candidates[0] = []rune(completion)
+		}
 		return candidates, offset
 	}
 
