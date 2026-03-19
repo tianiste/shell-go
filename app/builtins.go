@@ -63,7 +63,7 @@ func handleHelp(cmd *Command) {
 }
 
 func handleExit(cmd *Command) {
-	os.Exit(0)
+	shellShouldExit = true
 }
 
 func handleEcho(cmd *Command) {
@@ -119,9 +119,46 @@ func handleCd(cmd *Command) {
 }
 
 func createHistoryFile() {
+	if strings.TrimSpace(historyFile) == "" {
+		return
+	}
+
 	if _, err := os.Stat(historyFile); os.IsNotExist(err) {
 		os.WriteFile(historyFile, []byte{}, 0644)
 	}
+}
+
+func readHistoryEntries(filePath string) ([]string, error) {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("Error reading history file: %w", err)
+	}
+
+	raw := strings.TrimSpace(string(content))
+	if raw == "" {
+		return []string{}, nil
+	}
+
+	lines := strings.Split(raw, "\n")
+	entries := make([]string, 0, len(lines))
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		entries = append(entries, line)
+	}
+
+	return entries, nil
+}
+
+func appendHistoryFromFile(filePath string) error {
+	entries, err := readHistoryEntries(filePath)
+	if err != nil {
+		return err
+	}
+
+	historyList = append(historyList, entries...)
+	return nil
 }
 
 func writeToHistory(filePath string) error {
@@ -168,16 +205,9 @@ func handleHistory(cmd *Command) {
 	}
 
 	if filePath, hasR := cmd.GetFlag("r"); hasR {
-		content, err := os.ReadFile(filePath)
-		if err != nil {
-			fmt.Println("Error reading history file:", err)
+		if err := appendHistoryFromFile(filePath); err != nil {
+			fmt.Println(err)
 			return
-		}
-		lines := strings.Split(strings.TrimSpace(string(content)), "\n")
-		for _, line := range lines {
-			if strings.TrimSpace(line) != "" {
-				historyList = append(historyList, line)
-			}
 		}
 		return
 	}

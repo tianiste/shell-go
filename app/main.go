@@ -22,14 +22,30 @@ var (
 	commands          map[string]func(*Command)
 	historyList       []string
 	lastAppendedIndex int
+	shellShouldExit   bool
 )
 
-func main() {
+func initializeHistory() {
+	historyFile = os.Getenv("HISTFILE")
+	if strings.TrimSpace(historyFile) == "" {
+		return
+	}
+
+	createHistoryFile()
+	if err := appendHistoryFromFile(historyFile); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+	}
+
 	lastAppendedIndex = len(historyList)
+}
+
+func main() {
+	initializeHistory()
 	initializeCommands()
 	completers := buildCompleters()
 	baseCompleter := readline.NewPrefixCompleter(completers...)
 	doubleTabCompleter := &DoubleTabCompleter{inner: baseCompleter}
+	defer flushHistoryOnExit()
 
 	reader, err := createReadline(doubleTabCompleter)
 	if err != nil {
@@ -38,6 +54,16 @@ func main() {
 	defer reader.Close()
 
 	runShell(reader)
+}
+
+func flushHistoryOnExit() {
+	if strings.TrimSpace(historyFile) == "" {
+		return
+	}
+
+	if err := appendToHistory(historyFile); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+	}
 }
 
 func runShell(reader *readline.Instance) {
@@ -51,6 +77,9 @@ func runShell(reader *readline.Instance) {
 		}
 
 		executeCommand(text)
+		if shellShouldExit {
+			break
+		}
 	}
 }
 
