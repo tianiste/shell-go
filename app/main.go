@@ -11,19 +11,28 @@ import (
 )
 
 const (
-	shellPrompt   = "$ "
-	historyFile   = "/tmp/my_shell_history"
+	shellPrompt = "$ "
+	//	historyFile   = "/tmp/my_shell_history"
 	bellChar      = "\a"
 	optionSpacing = "  "
 )
 
 var (
+	historyFile       string
 	commands          map[string]func(*Command)
 	historyList       []string
 	lastAppendedIndex int
 )
 
 func main() {
+	envHistoryFile := os.Getenv("HISTFILE")
+	fmt.Println(envHistoryFile)
+	fmt.Println(len(envHistoryFile))
+	if len(envHistoryFile) == 0 {
+		historyFile = "/tmp/my_shell_history"
+	} else {
+		historyFile = envHistoryFile
+	}
 	lastAppendedIndex = len(historyList)
 	initializeCommands()
 	completers := buildCompleters()
