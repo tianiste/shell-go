@@ -219,29 +219,28 @@ func completeCommands(commandNames []string, token string, offset int) ([][]rune
 }
 
 func completeFileNames(token string, offset int) ([][]rune, int) {
-	dirPart := filepath.Dir(token)
-	if token == "" {
-		dirPart = "."
-	}
-
+	searchDir := "."
 	namePrefix := token
-	if strings.Contains(token, "/") {
-		namePrefix = filepath.Base(token)
-	}
+	displayPrefix := ""
 
-	searchDir := dirPart
-	if searchDir == "" {
-		searchDir = "."
+	if token == "" {
+		namePrefix = ""
+	} else if strings.HasSuffix(token, "/") {
+		searchDir = token
+		namePrefix = ""
+		displayPrefix = token
+	} else if strings.Contains(token, "/") {
+		searchDir = filepath.Dir(token)
+		if searchDir == "" {
+			searchDir = "."
+		}
+		namePrefix = filepath.Base(token)
+		displayPrefix = strings.TrimSuffix(token, namePrefix)
 	}
 
 	entries, err := os.ReadDir(searchDir)
 	if err != nil {
 		return nil, offset
-	}
-
-	displayPrefix := ""
-	if token != "" && strings.Contains(token, "/") {
-		displayPrefix = strings.TrimSuffix(token, namePrefix)
 	}
 
 	candidates := make([][]rune, 0)
